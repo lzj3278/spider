@@ -26,7 +26,7 @@ path = os.getcwd()
 new_path = os.path.join(path, u'漫画')
 if not os.path.isdir(new_path):
 	os.mkdir(new_path)
-q = Queue.Queue(0)
+
 # url_base = 'http://www.veerchina.com'
 url = 'https://alpha.wallhaven.cc/random'
 
@@ -42,8 +42,6 @@ def find_img(url):
 	return pic_url
 
 
-
-
 def find_img_2(url):
 	html = requests.get(url)
 	soup = BeautifulSoup(html.text)
@@ -53,6 +51,7 @@ def find_img_2(url):
 		pic_url.append(item.get('src'))
 	# print pic_url
 	return pic_url
+
 
 def head_url(url1):
 	user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
@@ -99,6 +98,7 @@ def main():
 	print 'begin'
 	full_url_dic = get_full_url()
 	thread = []
+	q = Queue.Queue(0)
 	for item in full_url_dic:
 		q.put(item)
 	print "job qsize:", q.qsize()
