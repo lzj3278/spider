@@ -8,13 +8,13 @@ import urllib2
 import re
 
 from bs4 import BeautifulSoup
+from time import ctime
 
 path = os.getcwd()
 new_path = os.path.join(path, u'漫画')
 if not os.path.isdir(new_path):
 	os.mkdir(new_path)
 q = Queue.Queue(0)
-# url_base = 'http://www.veerchina.com'
 url = 'https://alpha.wallhaven.cc/random'
 
 
@@ -76,8 +76,9 @@ class Mythread(threading.Thread):
 		self.args = args
 
 	def run(self):
+		print 'start thread', threading.Thread.getName(self), 'at:', ctime()
 		self.target(self.args)
-
+		print 'end thread', threading.Thread.getName(self), 'at:', ctime()
 
 def get_picture(url):
 	url_big = find_img_2(url)
@@ -89,16 +90,23 @@ def get_picture(url):
 		f.write(contents)
 
 
-if __name__ == '__main__':
+def main():
 	print 'begin'
 	full_url_dic = get_full_url()
-	for i in full_url_dic:
-		q.put(i)
+	thread = []
+	for item in full_url_dic:
+		q.put(item)
 	print "job qsize:", q.qsize()
-	while True:
+	queue_size = range(q.qsize())
+	for i in queue_size:
 		my_thread = Mythread(get_picture, q.get())
-		my_thread.start()
-		# my_thread.join()
-		print q.qsize()
-		if q.qsize() == 0:
-			break
+		thread.append(my_thread)
+	for i in queue_size:
+		thread[i].start()
+	for i in queue_size:
+		thread[i].join()
+	print 'all done at:', ctime()
+
+
+if __name__ == '__main__':
+	main()
