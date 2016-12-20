@@ -6,20 +6,40 @@
 # Author: zhongjie.li
 # email: zhongjie.li@viziner.cn
 # Created Time: 2016-12-19 09:57:24
-# Last Modified: 2016-12-19 17:35:26
+# Last Modified: 2016-12-20 13:52:47
 ############################
 
 import requests
 import time
 import os
 import re
+import json
 import sys
-from bs4 import BeautifulSoup as BS
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
 home_url = "http://www.dowater.com/nijian/"
 base_url = "http://www.dowater.com/"
+
+
+class Tool:
+    replaceTD = re.compile('<td>')
+    replacePara = re.compile('<P.*?>|</P>')
+    replaceBR = re.compile('<BR><BR>|<BR>')
+    removeAddr = re.compile('<A.*?>|</A>')
+    removeFont = re.compile('<FONT.*?>|</FONT>')
+    # removeImg = re.compile('<img.*?>| {7}|')
+    # removeExtraTag = re.compile('<.*?>')
+
+    def replace(self, x):
+        x = re.sub(self.replaceTD, " ", x)
+        x = re.sub(self.replacePara, " ", x)
+        x = re.sub(self.replaceBR, " ", x)
+        # x = re.sub(self.removeImg, " ", x)
+        x = re.sub(self.removeFont, " ", x)
+        x = re.sub(self.removeAddr, "", x)
+        # x = re.sub(self.removeExtraTag, " ", x)
+        return x.strip()
 
 
 class Session_client(object):
@@ -71,6 +91,7 @@ class Get_info(object):
     def __init__(self, username, password):
         self.c = Session_client()
         self.c.login(username, password)
+        self.tool = Tool()
 
     def get_full_url(self, home_url):
         sul = self.c.open(home_url)
@@ -83,23 +104,31 @@ class Get_info(object):
             full_links.append(base_url + i)
         return full_links
 
+    def save_mess(self, title, info_dic):
+        try:
+            with open('nijian' + '/' + title + '.txt', 'wb') as f:
+                jsonObj = json.dumps(info_dic, ensure_ascii=False)
+                f.write(jsonObj)
+        except Exception, e:
+            print e
+
     def get_mess(self, url_dic):
-        patterns_2 = re.compile(
-            r'<TD class=nijiantd[^>]*>(.*?)</TD>', re.S)
         patterns_3 = re.compile(
-            r'<TD class=nijiantd.*?</TD>\n*<TD.*?>(.*?)</TD>', re.S)
+            r'<TD class=[^>]*>(.*?)</TD>.*?<TD[^>]*>(.*?)</TD>', re.S)
         for item in url_dic:
             html1 = self.c.open(item)
             content_2 = html1.content.decode('gb2312').encode('utf-8')
-            # print html1.content
-            # print content_2
-            info = re.findall(patterns_2, content_2)
+            info_dic = {}
+            info = re.findall(patterns_3, content_2)
+            title = info[0][1]
             for i in info:
-                print i.encode('utf-8')
+                new_item = self.tool.replace(i[1])
+                info_dic[i[0]] = new_item
+            self.save_mess(title, info_dic)
 
 
 if __name__ == "__main__":
     g = Get_info("artronics", "hayi2017")
     # g.get_full_url(home_url)
-    url_dic = ["http://www.dowater.com/nijian/2016-12-16/516833.asp"]
+    url_dic = ["http://www.dowater.com/nijian/2016-12-20/517454.asp"]
     g.get_mess(url_dic)
