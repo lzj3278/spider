@@ -6,7 +6,7 @@
 # Author: zhongjie.li
 # email: zhongjie.li@viziner.cn
 # Created Time: 2016-12-19 09:57:24
-# Last Modified: 2016-12-20 16:13:53
+# Last Modified: 2016-12-20 17:10:03
 ############################
 
 import requests
@@ -91,8 +91,6 @@ class Session_client(object):
             if name_find.group(1) == self._username:
                 print("登陆成功")
                 break
-            else:
-                print("登录失败，重新输入")
 
     def open(self, url, delay=0, timeout=10):
         '''
@@ -129,7 +127,6 @@ class Get_info(object):
         for i in links:
             if i[1] == date_stamp:
                 full_links.append(base_url + i[0])
-        # print full_links
         return full_links
 
     def save_mess(self, title, info_dic):
@@ -162,7 +159,10 @@ class Get_info(object):
 
 
 if __name__ == "__main__":
-    g = Get_info("artronics", "hayi")
-    dic = g.get_full_url(home_url)
-    # url_dic = ["http://www.dowater.com/nijian/2016-12-20/517454.asp"]
-    g.get_mess(dic)
+    try:
+        g = Get_info("artronics", "hayi")
+    except Exception:
+        print('登录失败，重新验证用户密码')
+    else:
+        dic = g.get_full_url(home_url)
+        g.get_mess(dic)
