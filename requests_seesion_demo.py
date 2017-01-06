@@ -6,7 +6,7 @@
 # Author: zhongjie.li
 # email: zhongjie.li@viziner.cn
 # Created Time: 2016-12-19 09:57:24
-# Last Modified: 2017-01-06 15:43:33
+# Last Modified: 2017-01-06 15:46:30
 ############################
 
 import requests
@@ -163,7 +163,7 @@ class Get_info(object):
 
 if __name__ == "__main__":
     try:
-        g = Get_info("artronics", "hayi2017")
+        g = Get_info("artronics", "hayi")
     except Exception:
         print('登录失败，重新验证用户密码')
     else:
