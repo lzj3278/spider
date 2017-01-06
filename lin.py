@@ -6,7 +6,7 @@
 # Author: zhongjie.li
 # email: zhongjie.li@viziner.cn
 # Created Time: 2016-12-19 09:57:24
-# Last Modified: 2017-01-06 17:19:16
+# Last Modified: 2017-01-07 00:28:47
 ############################
 
 import requests
@@ -160,12 +160,9 @@ class Get_info(object):
                 print('编码错误')
                 print(title)
 
-
 if __name__ == "__main__":
     category = sys.argv[1]
-    print category
     date_time = sys.argv[2]
-    print date_time
     home_url = "http://www.dowater.com/%s/Index.asp?page=" % (category)
     base_url = "http://www.dowater.com/"
     date_stamp = time.strftime('%Y-%m-%d')
