@@ -6,7 +6,7 @@
 # Author: zhongjie.li
 # email: zhongjie.li@viziner.cn
 # Created Time: 2016-12-19 09:57:24
-# Last Modified: 2016-12-20 17:10:03
+# Last Modified: 2017-01-06 15:43:33
 ############################
 
 import requests
@@ -147,20 +147,23 @@ class Get_info(object):
         patterns_3 = re.compile(
             r'<TD class=[^>]*>(.*?)</TD>.*?<TD[^>]*>(.*?)</TD>', re.S)
         for item in url_dic:
-            html1 = self.c.open(item)
-            content_2 = html1.content.decode('gb2312').encode('utf-8')
-            info_dic = {}
-            info = re.findall(patterns_3, content_2)
-            title = info[0][1]
-            for i in info:
-                new_item = self.tool.replace(i[1])
-                info_dic[i[0]] = new_item
-            self.save_mess(title, info_dic)
+            try:
+                html1 = self.c.open(item)
+                content_2 = html1.content.decode('gb2312').encode('utf-8')
+                info_dic = {}
+                info = re.findall(patterns_3, content_2)
+                title = info[0][1]
+                for i in info:
+                    new_item = self.tool.replace(i[1])
+                    info_dic[i[0]] = new_item
+                self.save_mess(title, info_dic)
+            except Exception:
+                print('编码错误')
 
 
 if __name__ == "__main__":
     try:
-        g = Get_info("artronics", "hayi")
+        g = Get_info("artronics", "hayi2017")
     except Exception:
         print('登录失败，重新验证用户密码')
     else:
