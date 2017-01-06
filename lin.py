@@ -6,7 +6,7 @@
 # Author: zhongjie.li
 # email: zhongjie.li@viziner.cn
 # Created Time: 2016-12-19 09:57:24
-# Last Modified: 2017-01-06 17:19:24
+# Last Modified: 2017-01-06 17:19:16
 ############################
 
 import requests
@@ -17,14 +17,6 @@ import json
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
-
-home_url = "http://www.dowater.com/nijian/"
-base_url = "http://www.dowater.com/"
-date_stamp = time.strftime('%Y-%m-%d')
-path = os.getcwd()
-new_path = os.path.join(path, '拟建项目', date_stamp)
-if not os.path.isdir(new_path):
-    os.makedirs(new_path)
 
 
 class Tool:
@@ -106,28 +98,35 @@ class Get_info(object):
     抓取信息类
     '''
 
-    def __init__(self, username, password):
+    def __init__(self, username, password, category, date_time):
         '''
         初始化 session实例化，tool实例化
         '''
         self.c = Session_client()
         self.c.login(username, password)
         self.tool = Tool()
+        self.category = category
+        self.date_time = date_time
 
-    def get_full_url(self, home_url):
+    def get_full_url(self, home_url, yema=6):
         '''
         抓取页面所有需要的url
         '''
-        sul = self.c.open(home_url)
-        # print(sul.content.decode('gb2312').encode('utf-8'))
-        pattern = re.compile(
-            r'<li class="listlink_nijian">.*?href="(/nijian/(.*?)/[^"]*)".*?</li>', re.S)
-        links = re.findall(pattern, sul.content)
         full_links = []
-        for i in links:
-            if i[1] == date_stamp:
-                full_links.append(base_url + i[0])
-        return full_links
+        if self.category == 'nijian':
+            for i in range(yema):
+                home_url_2 = home_url + '%s' % (i)
+                sul = self.c.open(home_url_2)
+                # print(sul.content.decode('gb2312').encode('utf-8'))
+                pattern = re.compile(
+                    r'<li class="listlink_nijian">.*?href="(/nijian/(.*?)/[^"]*)".*?</li>', re.S)
+                links = re.findall(pattern, sul.content)
+                for i in links:
+                    if i[1] == self.date_time:
+                        full_links.append(base_url + i[0])
+                return full_links
+        else:
+            pass
 
     def save_mess(self, title, info_dic):
         '''
@@ -159,13 +158,25 @@ class Get_info(object):
                 self.save_mess(title, info_dic)
             except Exception:
                 print('编码错误')
+                print(title)
 
 
 if __name__ == "__main__":
+    category = sys.argv[1]
+    print category
+    date_time = sys.argv[2]
+    print date_time
+    home_url = "http://www.dowater.com/%s/Index.asp?page=" % (category)
+    base_url = "http://www.dowater.com/"
+    date_stamp = time.strftime('%Y-%m-%d')
+    path = os.getcwd()
+    new_path = os.path.join(path, category, date_time)
+    if not os.path.isdir(new_path):
+        os.makedirs(new_path)
     try:
-        g = Get_info("artronics", "hayi")
+        g = Get_info("artronics", "hayi", category, date_time)
     except Exception:
         print('登录失败，重新验证用户密码')
     else:
-        dic = g.get_full_url(home_url)
+        dic = g.get_full_url(home_url, 5)
         g.get_mess(dic)
