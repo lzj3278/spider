@@ -6,7 +6,7 @@
 # Author: zhongjie.li
 # email: zhongjie.li@viziner.cn
 # Created Time: 2016-12-19 09:57:24
-# Last Modified: 2017-01-07 00:28:47
+# Last Modified: 2017-01-08 14:19:11
 ############################
 
 import requests
@@ -108,27 +108,32 @@ class Get_info(object):
         self.category = category
         self.date_time = date_time
 
-    def get_full_url(self, home_url, yema=6):
+    def get_full_url(self, yema=6):
         '''
         抓取页面所有需要的url
         '''
         full_links = []
-        if self.category == 'nijian':
-            for i in range(yema):
-                home_url_2 = home_url + '%s' % (i)
-                sul = self.c.open(home_url_2)
-                # print(sul.content.decode('gb2312').encode('utf-8'))
+        home_url = "http://www.dowater.com/%s/Index.asp?page=" % (
+            self.category)
+        for i in range(yema):
+            home_url_2 = home_url + '%s' % (i)
+            sul = self.c.open(home_url_2)
+            if self.category == 'nijian':
                 pattern = re.compile(
                     r'<li class="listlink_nijian">.*?href="(/nijian/(.*?)/[^"]*)".*?</li>', re.S)
-                links = re.findall(pattern, sul.content)
-                for i in links:
-                    if i[1] == self.date_time:
-                        full_links.append(base_url + i[0])
-                return full_links
-        else:
-            pass
+            elif self.category == 'zhaobiao':
+                pattern = re.compile(
+                    r'<li class="listlink">.*?href="(/zhaobiao/(.*?)/[^"])".*?</li>', re.S)
+            else:
+                pass
+            links = re.findall(pattern, sul.content)
+            for i in links:
+                if i[1] == self.date_time:
+                    full_links.append(base_url + i[0])
+        print full_links
+        return full_links
 
-    def save_mess(self, title, info_dic):
+    def save_nijian_mess(self, title, info_dic):
         '''
         以json形式保存信息
         '''
@@ -139,7 +144,7 @@ class Get_info(object):
         except Exception, e:
             print e
 
-    def get_mess(self, url_dic):
+    def get_nijian_mess(self, url_dic):
         '''
         抓取有用信息
         '''
@@ -160,20 +165,34 @@ class Get_info(object):
                 print('编码错误')
                 print(title)
 
+
+    def save_zhaobiao_mess(self,):
+        pass
+    def get_zhaobiao_mes(self, url_dic):
+        pattern = re.compile(r'<a href="(http://www.dowater.com/member/[^"]*)">', re.S)
+        for item in url_dic:
+            try:
+                html = self.c.open(item)
+                content = html.content.decode('gb2312').encode('utf-8')
+                info = re.match(pattern, content)
+                print info.groups()
+            except Exception:
+                print('编码错误')
+
+
 if __name__ == "__main__":
     category = sys.argv[1]
-    date_time = sys.argv[2]
-    home_url = "http://www.dowater.com/%s/Index.asp?page=" % (category)
     base_url = "http://www.dowater.com/"
     date_stamp = time.strftime('%Y-%m-%d')
+    # date_stamp = '2017-01-06'
     path = os.getcwd()
-    new_path = os.path.join(path, category, date_time)
+    new_path = os.path.join(path, category, date_stamp)
     if not os.path.isdir(new_path):
         os.makedirs(new_path)
     try:
-        g = Get_info("artronics", "hayi", category, date_time)
+        g = Get_info("artronics", "hayi", category, date_stamp)
     except Exception:
         print('登录失败，重新验证用户密码')
     else:
-        dic = g.get_full_url(home_url, 5)
-        g.get_mess(dic)
+        dic = g.get_full_url(5)
+        g.get_zhaobiao_mes(dic)
