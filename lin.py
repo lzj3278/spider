@@ -6,7 +6,7 @@
 # Author: zhongjie.li
 # email: zhongjie.li@viziner.cn
 # Created Time: 2016-12-19 09:57:24
-# Last Modified: 2017-01-08 14:19:11
+# Last Modified: 2017-01-09 11:30:25
 ############################
 
 import requests
@@ -30,6 +30,11 @@ class Tool:
     removeFont = re.compile('<FONT.*?>|</FONT>')
     # removeImg = re.compile('<img.*?>| {7}|')
     removeExtraTag = re.compile('\r|\n')
+    removecharset = re.compile('gb2312')
+
+    def replace_charset(self, x):
+        x = re.sub(self.removecharset, "utf-8", x)
+        return x
 
     def replace(self, x):
         x = re.sub(self.replaceTD, " ", x)
@@ -98,7 +103,7 @@ class Get_info(object):
     抓取信息类
     '''
 
-    def __init__(self, username, password, category, date_time):
+    def __init__(self, username, password, category, date_stamp):
         '''
         初始化 session实例化，tool实例化
         '''
@@ -106,7 +111,7 @@ class Get_info(object):
         self.c.login(username, password)
         self.tool = Tool()
         self.category = category
-        self.date_time = date_time
+        self.date_time = date_stamp
 
     def get_full_url(self, yema=6):
         '''
@@ -123,14 +128,13 @@ class Get_info(object):
                     r'<li class="listlink_nijian">.*?href="(/nijian/(.*?)/[^"]*)".*?</li>', re.S)
             elif self.category == 'zhaobiao':
                 pattern = re.compile(
-                    r'<li class="listlink">.*?href="(/zhaobiao/(.*?)/[^"])".*?</li>', re.S)
+                    r'<li class="listlink">.*?href="(/zhaobiao/(.*?)/[^"]*)".*?</li>', re.S)
             else:
                 pass
             links = re.findall(pattern, sul.content)
             for i in links:
                 if i[1] == self.date_time:
                     full_links.append(base_url + i[0])
-        print full_links
         return full_links
 
     def save_nijian_mess(self, title, info_dic):
@@ -160,24 +164,29 @@ class Get_info(object):
                 for i in info:
                     new_item = self.tool.replace(i[1])
                     info_dic[i[0]] = new_item
-                self.save_mess(title, info_dic)
-            except Exception:
-                print('编码错误')
-                print(title)
+                self.save_nijian_mess(title, info_dic)
+            except Exception, e:
+                print e
 
-
-    def save_zhaobiao_mess(self,):
-        pass
     def get_zhaobiao_mes(self, url_dic):
-        pattern = re.compile(r'<a href="(http://www.dowater.com/member/[^"]*)">', re.S)
+        base_down_url = "http://www.dowater.com/member/ArticleDown.asp?Articleid="
+
         for item in url_dic:
             try:
                 html = self.c.open(item)
-                content = html.content.decode('gb2312').encode('utf-8')
-                info = re.match(pattern, content)
-                print info.groups()
-            except Exception:
-                print('编码错误')
+                pattern = re.compile(
+                    r'<div id="main_content".*?<h1>(.*?)</h1>', re.S)
+                title = re.search(pattern, html.content).group(
+                    1).decode('gb2312').encode('utf-8')
+                item = item[-10:-4]
+                down_url = base_down_url + item
+                r = self.c.open(down_url)
+                r = self.tool.replace_charset(r.content)
+                with open(new_path + '/' + title + '.html', 'wb') as f:
+                    f.write(r.decode('gb2312').encode('utf-8'))
+
+            except Exception, e:
+                print e
 
 
 if __name__ == "__main__":
@@ -195,4 +204,7 @@ if __name__ == "__main__":
         print('登录失败，重新验证用户密码')
     else:
         dic = g.get_full_url(5)
-        g.get_zhaobiao_mes(dic)
+        if category == 'nijian':
+            g.get_nijian_mess(dic)
+        else:
+            g.get_zhaobiao_mes(dic)
