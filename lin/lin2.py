@@ -6,7 +6,7 @@
 # Author: zhongjie.li
 # email: zhongjie.li@viziner.cn
 # Created Time: 2016-12-19 09:57:24
-# Last Modified: 2017-01-11 16:48:07
+# Last Modified: 2017-01-12 17:28:57
 ############################
 
 import requests
@@ -15,40 +15,10 @@ import os
 import re
 import json
 import sys
+from Tools import Tool
+from mysql_write_date import Mysql_exec
 reload(sys)
 sys.setdefaultencoding('utf-8')
-
-
-class Tool:
-    '''
-    去除多余符号
-    '''
-    replaceTD = re.compile('<td>')
-    replacePara = re.compile('<P.*?>|</P>')
-    replaceBR = re.compile('<BR><BR>|<BR>')
-    removeAddr = re.compile('<A.*?>|</A>')
-    removeFont = re.compile('<FONT.*?>|</FONT>')
-    removefont = re.compile('<font.*?>|</font>')
-    # removeImg = re.compile('<img.*?>| {7}|')
-    removeExtraTag = re.compile('\r|\n')
-    removecharset = re.compile('gb2312')
-    removeSpan = re.compile('<SPAN[^>]*?>|</SPAN>')
-
-    def replace_charset(self, x):
-        x = re.sub(self.removecharset, "utf-8", x)
-        return x
-
-    def replace(self, x):
-        x = re.sub(self.replaceTD, " ", x)
-        x = re.sub(self.replacePara, " ", x)
-        x = re.sub(self.replaceBR, " ", x)
-        # x = re.sub(self.removeImg, " ", x)
-        x = re.sub(self.removeFont, " ", x)
-        x = re.sub(self.removefont, " ", x)
-        x = re.sub(self.removeAddr, "", x)
-        x = re.sub(self.removeExtraTag, " ", x)
-        x = re.sub(self.removeSpan, "", x)
-        return x.strip()
 
 
 class Session_client(object):
@@ -116,6 +86,7 @@ class Get_info(object):
         self.tool = Tool()
         self.category = category
         self.date_time = date_stamp
+        self.mydb = Mysql_exec('localhost', 'root', 'lzj3278', 'aite')
 
     def get_nijian_link(self, pattern, sul, full_links):
         links = re.findall(pattern, sul.content)
@@ -124,7 +95,7 @@ class Get_info(object):
                 full_links.append(i)
         return full_links
 
-    def get_zhaobiao_link(self, pattern,sul,full_links):
+    def get_zhaobiao_link(self, pattern, sul, full_links):
         links = re.findall(pattern, sul.content)
         for i in links:
             if i[1] == self.date_time:
@@ -149,7 +120,7 @@ class Get_info(object):
                 pattern = re.compile(
                     r'<li class="listlink_nijian"><a title="([^"]*?)".*?href="(/nijian/(.*?)/[^"]*)".*?</li><li class="listclass_nijian">([^<]*)</li><li class="listdatetime_nijian">([^<]*)</li>', re.S)
 
-                full_links = self.get_nijian_link(pattern, sul,full_links)
+                full_links = self.get_nijian_link(pattern, sul, full_links)
 
             elif self.category == 'zhaobiao':
                 pattern = re.compile(
@@ -181,14 +152,16 @@ class Get_info(object):
                 content_2 = html1.content.decode('gb2312').encode('utf-8')
                 info_dic = {}
                 info = re.findall(patterns_3, content_2)
-                title = self.tool.replace(item[0]).decode('gb2312').encode('utf-8')
+                title = self.tool.replace(item[0]).decode(
+                    'gb2312').encode('utf-8')
                 for i in info:
                     new_item = self.tool.replace(i[1])
                     info_dic[i[0]] = new_item
                 info_dic['项目状态'] = item[-2].decode('gb2312').encode('utf-8')
                 info_dic['发布时间'] = item[-1]
                 info_dic['项目标题'] = title
-                self.save_nijian_mess(title, info_dic)
+                # self.save_nijian_mess(title, info_dic)
+                self.mydb.mysql_insert(info_dic)
             except Exception, e:
                 print(url_nijian)
                 print e
@@ -225,7 +198,7 @@ if __name__ == "__main__":
     if not os.path.isdir(new_path):
         os.makedirs(new_path)
     try:
-        g = Get_info("artronics", "hayi2017", category, date_stamp)
+        g = Get_info("artronics", "hayi", category, date_stamp)
     except Exception:
         print('登录失败，重新验证用户密码')
     else:
