@@ -6,7 +6,7 @@
 # Author: zhongjie.li
 # email: zhongjie.li@viziner.cn
 # Created Time: 2016-12-19 09:57:24
-# Last Modified: 2017-01-09 11:30:25
+# Last Modified: 2017-01-11 16:48:07
 ############################
 
 import requests
@@ -28,9 +28,11 @@ class Tool:
     replaceBR = re.compile('<BR><BR>|<BR>')
     removeAddr = re.compile('<A.*?>|</A>')
     removeFont = re.compile('<FONT.*?>|</FONT>')
+    removefont = re.compile('<font.*?>|</font>')
     # removeImg = re.compile('<img.*?>| {7}|')
     removeExtraTag = re.compile('\r|\n')
     removecharset = re.compile('gb2312')
+    removeSpan = re.compile('<SPAN[^>]*?>|</SPAN>')
 
     def replace_charset(self, x):
         x = re.sub(self.removecharset, "utf-8", x)
@@ -42,8 +44,10 @@ class Tool:
         x = re.sub(self.replaceBR, " ", x)
         # x = re.sub(self.removeImg, " ", x)
         x = re.sub(self.removeFont, " ", x)
+        x = re.sub(self.removefont, " ", x)
         x = re.sub(self.removeAddr, "", x)
         x = re.sub(self.removeExtraTag, " ", x)
+        x = re.sub(self.removeSpan, "", x)
         return x.strip()
 
 
@@ -61,7 +65,7 @@ class Session_client(object):
     loginURL = "http://www.dowater.com/login/login1.asp"
 
     def __init__(self):
-        os.chdir(sys.path[0])
+        # os.chdir(sys.path[0])
         self._session = requests.Session()
         self._session.headers = self.headers
 
@@ -113,6 +117,20 @@ class Get_info(object):
         self.category = category
         self.date_time = date_stamp
 
+    def get_nijian_link(self, pattern, sul, full_links):
+        links = re.findall(pattern, sul.content)
+        for i in links:
+            if i[2] == self.date_time:
+                full_links.append(i)
+        return full_links
+
+    def get_zhaobiao_link(self, pattern,sul,full_links):
+        links = re.findall(pattern, sul.content)
+        for i in links:
+            if i[1] == self.date_time:
+                full_links.append(base_url + i[0])
+        return full_links
+
     def get_full_url(self, yema=6):
         '''
         抓取页面所有需要的url
@@ -124,17 +142,19 @@ class Get_info(object):
             home_url_2 = home_url + '%s' % (i)
             sul = self.c.open(home_url_2)
             if self.category == 'nijian':
+                # pattern = re.compile(
+                    # r'<li
+                    # class="listlink_nijian">.*?href="(/nijian/(.*?)/[^"]*)".*?</li>',
+                    # re.S)
                 pattern = re.compile(
-                    r'<li class="listlink_nijian">.*?href="(/nijian/(.*?)/[^"]*)".*?</li>', re.S)
+                    r'<li class="listlink_nijian"><a title="([^"]*?)".*?href="(/nijian/(.*?)/[^"]*)".*?</li><li class="listclass_nijian">([^<]*)</li><li class="listdatetime_nijian">([^<]*)</li>', re.S)
+
+                full_links = self.get_nijian_link(pattern, sul,full_links)
+
             elif self.category == 'zhaobiao':
                 pattern = re.compile(
                     r'<li class="listlink">.*?href="(/zhaobiao/(.*?)/[^"]*)".*?</li>', re.S)
-            else:
-                pass
-            links = re.findall(pattern, sul.content)
-            for i in links:
-                if i[1] == self.date_time:
-                    full_links.append(base_url + i[0])
+                full_links = self.get_zhaobiao_link(pattern, sul, full_links)
         return full_links
 
     def save_nijian_mess(self, title, info_dic):
@@ -156,16 +176,21 @@ class Get_info(object):
             r'<TD class=[^>]*>(.*?)</TD>.*?<TD[^>]*>(.*?)</TD>', re.S)
         for item in url_dic:
             try:
-                html1 = self.c.open(item)
+                url_nijian = base_url + item[1]
+                html1 = self.c.open(url_nijian)
                 content_2 = html1.content.decode('gb2312').encode('utf-8')
                 info_dic = {}
                 info = re.findall(patterns_3, content_2)
-                title = info[0][1]
+                title = self.tool.replace(item[0]).decode('gb2312').encode('utf-8')
                 for i in info:
                     new_item = self.tool.replace(i[1])
                     info_dic[i[0]] = new_item
+                info_dic['项目状态'] = item[-2].decode('gb2312').encode('utf-8')
+                info_dic['发布时间'] = item[-1]
+                info_dic['项目标题'] = title
                 self.save_nijian_mess(title, info_dic)
             except Exception, e:
+                print(url_nijian)
                 print e
 
     def get_zhaobiao_mes(self, url_dic):
@@ -195,15 +220,16 @@ if __name__ == "__main__":
     date_stamp = time.strftime('%Y-%m-%d')
     # date_stamp = '2017-01-06'
     path = os.getcwd()
+    # path = "/var/www/html/aiteManagement/download/"
     new_path = os.path.join(path, category, date_stamp)
     if not os.path.isdir(new_path):
         os.makedirs(new_path)
     try:
-        g = Get_info("artronics", "hayi", category, date_stamp)
+        g = Get_info("artronics", "hayi2017", category, date_stamp)
     except Exception:
         print('登录失败，重新验证用户密码')
     else:
-        dic = g.get_full_url(5)
+        dic = g.get_full_url(4)
         if category == 'nijian':
             g.get_nijian_mess(dic)
         else:
