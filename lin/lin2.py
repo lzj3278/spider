@@ -6,7 +6,7 @@
 # Author: zhongjie.li
 # email: zhongjie.li@viziner.cn
 # Created Time: 2016-12-19 09:57:24
-# Last Modified: 2017-01-17 14:02:39
+# Last Modified: 2017-02-04 14:10:52
 ############################
 
 import time
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     if not os.path.isdir(new_path):
         os.makedirs(new_path)
     try:
-        g = Get_info("artronics", "hayi2017", category, date_stamp)
+        g = Get_info("artroni", "hayi", category, date_stamp)
     except Exception:
         print('登录失败，重新验证用户密码')
     else:
