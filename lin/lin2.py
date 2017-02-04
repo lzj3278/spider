@@ -6,7 +6,7 @@
 # Author: zhongjie.li
 # email: zhongjie.li@viziner.cn
 # Created Time: 2016-12-19 09:57:24
-# Last Modified: 2017-01-13 18:31:31
+# Last Modified: 2017-01-17 14:02:39
 ############################
 
 import time
@@ -36,7 +36,7 @@ class Get_info(object):
         self.tool = Tool()
         self.category = category
         self.date_time = date_stamp
-        self.mydb = Mysql_exec('localhost', 'root', 'lzj', 'aite')
+        self.mydb = Mysql_exec('localhost', 'root', 'lzj3278', 'aite')
 
     def get_link(self, pattern, sul, full_links):
         """
@@ -145,8 +145,9 @@ class Get_info(object):
                 down_url = base_down_url + item
                 r = self.c.open(down_url)
                 r = self.tool.replace_charset(r.content)
+                r = self.tool.remove_unuse(r.decode(decode_str).encode('utf-8'))
                 with open(new_path + '/' + title + '.html', 'wb') as f:
-                    f.write(r.decode(decode_str).encode('utf-8'))
+                    f.write(r)
                 self.mydb.mysql_other_insert(info_dic)
 
             except Exception, e:
@@ -158,13 +159,13 @@ if __name__ == "__main__":
     decode_str = 'gb18030'
     base_url = "http://www.dowater.com/"
     date_stamp = time.strftime('%Y-%m-%d')
-    path = os.getcwd()
-    # path = "/var/www/html/aiteManagement/download/"
+    # path = os.getcwd()
+    path = "/var/www/html/aiteManagement/download/"
     new_path = os.path.join(path, category, date_stamp)
     if not os.path.isdir(new_path):
         os.makedirs(new_path)
     try:
-        g = Get_info("artronics", "hayi", category, date_stamp)
+        g = Get_info("artronics", "hayi2017", category, date_stamp)
     except Exception:
         print('登录失败，重新验证用户密码')
     else:
